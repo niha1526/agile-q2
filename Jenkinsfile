@@ -50,15 +50,20 @@ pipeline {
             }
         }
 
-        stage('Security Gate') {
-            steps {
-                powershell '''
-                    docker run --rm --entrypoint sh $env:IMAGE:latest -c "test -f /usr/share/nginx/html/index.html"
-                    if ($LASTEXITCODE -ne 0) { throw "Security/pre-deployment gate failed" }
-                    Write-Host "PASS: Required application file exists"
-                '''
+        
+stage('Security Gate') {
+    steps {
+        powershell '''
+            $image = "$($env:IMAGE):$($env:BUILD_NUMBER)"
+            docker run --rm --entrypoint sh $image -c "test -f /usr/share/nginx/html/index.html"
+            if ($LASTEXITCODE -ne 0) {
+                throw "Security gate failed: index.html is missing"
             }
-        }
+            Write-Host "PASS: Application file integrity check"
+        '''
+    }
+}
+
 
         stage('Push Image') {
             steps {
