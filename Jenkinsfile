@@ -73,10 +73,11 @@ stage('Security Gate') {
                     passwordVariable: 'DOCKERHUB_TOKEN'
                 )]) {
                     powershell '''
-                        $env:DOCKERHUB_TOKEN | docker login -u $env:DOCKERHUB_USER --password-stdin
+                        $image = "$($env:IMAGE):$($env:BUILD_NUMBER)"
+
+                        docker login -u $env:DOCKERHUB_USER -p $env:DOCKERHUB_TOKEN
                         if ($LASTEXITCODE -ne 0) { throw "Docker Hub login failed" }
 
-                        $image = "$($env:IMAGE):$($env:BUILD_NUMBER)"
                         docker push $image
                         if ($LASTEXITCODE -ne 0) { throw "Docker push failed" }
 
@@ -93,19 +94,17 @@ stage('Security Gate') {
                     variable: 'KUBECONFIG'
                 )]) {
                     powershell '''
-                        kubectl apply -f deployment.yaml
+                        $image = "$($env:IMAGE):$($env:BUILD_NUMBER)"
+
+                        (Get-Content deployment.yaml) -replace 'image: niharikarao15/online-bookstore:.*', "image: $image" | kubectl apply -f -
                         if ($LASTEXITCODE -ne 0) { throw "Kubernetes apply failed" }
 
-                        $image = "$($env:IMAGE):$($env:BUILD_NUMBER)"
-                        kubectl set image deployment/online-bookstore "bookstore=$image"
-                        if ($LASTEXITCODE -ne 0) { throw "Image update failed" }
-
-                        kubectl rollout status deployment/online-bookstore --timeout=120s
+                        kubectl rollout status deployment/online-bookstore --timeout=60s
                         if ($LASTEXITCODE -ne 0) {
-                            Write-Host "Rollout failed. Rolling back."
+                            Write-Host "Rollout FAILED - rolling back to previous stable release"
                             kubectl rollout undo deployment/online-bookstore
-                            kubectl rollout status deployment/online-bookstore --timeout=120s
-                            throw "Deployment failed; rollback attempted"
+                            kubectl rollout status deployment/online-bookstore --timeout=60s
+                            throw "Deployment failed; rollback performed"
                         }
                     '''
                 }
