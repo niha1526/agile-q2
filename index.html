@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PageTurner Online Bookstore</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f5f3ee;color:#252525}
+header{background:#233d32;color:white;padding:22px 7%;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px}
+header h1{margin:0}
+.hero{padding:35px 7%;background:#dce8d8}
+.hero h2{font-size:30px;margin:0 0 10px}
+main{padding:28px 7%}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px}
+input,select,button{padding:11px;border:1px solid #bbb;border-radius:6px;font-size:15px}
+input{flex:1;min-width:190px}
+button{background:#315a43;color:white;border:0;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:18px}
+.book{background:white;padding:20px;border-radius:10px;box-shadow:0 2px 9px #0001}
+.cover{height:105px;background:#e5d7bd;display:grid;place-items:center;font-size:48px;border-radius:7px}
+.book h3{margin-bottom:6px}
+.muted{color:#666;font-size:14px}
+.price{font-size:19px;font-weight:bold}
+.available{color:#18723b}.unavailable{color:#b52b2b}
+.panel{background:white;padding:20px;margin-top:25px;border-radius:10px}
+footer{text-align:center;padding:24px;color:#666}
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 PageTurner</h1>
+  <strong>Cart: <span id="cartCount">0</span></strong>
+</header>
+<section class="hero">
+  <h2>Find your next favourite book.</h2>
+  <p>Explore technology, fiction, business and personal development.</p>
+</section>
+<main>
+  <h2>Our Books</h2>
+  <div class="controls">
+    <input id="search" placeholder="Search title or author..." oninput="renderBooks()">
+    <select id="category" onchange="renderBooks()">
+      <option value="">All categories</option>
+      <option>Technology</option><option>Fiction</option>
+      <option>Business</option><option>Self-Help</option>
+    </select>
+  </div>
+  <div class="grid" id="books"></div>
+  <section class="panel">
+    <h2>Shopping Cart</h2>
+    <div id="cart">Your cart is empty.</div>
+    <p id="total">Total: ₹0</p>
+    <button onclick="checkout()">Place Demo Order</button>
+    <p id="orderStatus">Order status: No order placed</p>
+  </section>
+  <section class="panel">
+    <h2>Customer Thank You</h2>
+    <p>Thank you for supporting PageTurner. Happy reading!</p>
+  </section>
+</main>
+<footer>PageTurner Online Bookstore · Academic Demo Application</footer>
+<script>
+const books=[
+{id:1,title:"Clean Code",author:"Robert C. Martin",category:"Technology",price:650,stock:true},
+{id:2,title:"The Pragmatic Programmer",author:"Andrew Hunt",category:"Technology",price:720,stock:true},
+{id:3,title:"1984",author:"George Orwell",category:"Fiction",price:299,stock:true},
+{id:4,title:"The Alchemist",author:"Paulo Coelho",category:"Fiction",price:350,stock:false},
+{id:5,title:"Zero to One",author:"Peter Thiel",category:"Business",price:499,stock:true},
+{id:6,title:"Atomic Habits",author:"James Clear",category:"Self-Help",price:450,stock:true}
+];
+let cart=[];
+function renderBooks(){
+ const q=document.getElementById("search").value.toLowerCase();
+ const c=document.getElementById("category").value;
+ const list=books.filter(b=>(b.title+" "+b.author).toLowerCase().includes(q)&&(!c||b.category===c));
+ document.getElementById("books").innerHTML=list.map(b=>`
+ <article class="book"><div class="cover">📖</div><h3>${b.title}</h3>
+ <p class="muted">By ${b.author}</p><p>${b.category}</p>
+ <p class="price">₹${b.price}</p>
+ <p class="${b.stock?'available':'unavailable'}">${b.stock?'In Stock':'Out of Stock'}</p>
+ <button ${!b.stock?'disabled':''} onclick="addToCart(${b.id})">Add to Cart</button></article>`).join("")||"<p>No books found.</p>";
+}
+function addToCart(id){cart.push(books.find(b=>b.id===id));renderCart()}
+function renderCart(){
+ document.getElementById("cartCount").textContent=cart.length;
+ document.getElementById("cart").innerHTML=cart.length?cart.map((b,i)=>`${b.title} — ₹${b.price} <button onclick="removeItem(${i})">Remove</button>`).join("<br><br>"):"Your cart is empty.";
+ document.getElementById("total").textContent="Total: ₹"+cart.reduce((s,b)=>s+b.price,0);
+}
+function removeItem(i){cart.splice(i,1);renderCart()}
+function checkout(){
+ if(!cart.length){document.getElementById("orderStatus").textContent="Add a book before checkout.";return}
+ document.getElementById("orderStatus").textContent="Order PT-"+Date.now().toString().slice(-6)+" placed successfully! Status: Confirmed (demo).";
+ cart=[];renderCart();
+}
+renderBooks();
+</script>
+</body>
+</html>
